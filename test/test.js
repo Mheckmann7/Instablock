@@ -38,7 +38,24 @@ contract('Instablock', ([deployer, author, tipper]) => {
 
         it('creates posts', async () => {
             assert.equal(postCount, 1)
-            console.log(result)
+            const event = result.logs[0].args
+            assert.equal(event.id.toNumber(), postCount.toNumber(), 'id is correct')
+            assert.equal(event.hash, hash, 'Hash is correct')
+            assert.equal(event.description, 'Post description', 'description is correct')
+            assert.equal(event.tipAmount, '0', 'tip amount is correct')
+            assert.equal(event.author, author, 'author is correct')
+            // Failure: must have hash
+            await instablock.uploadPost('', 'Post description', { from: author }).should.be.rejected;
+            // Failure: must have description 
+            await instablock.uploadPost('Post hash', '', { from: author }).should.be.rejected;
+        })
+        it('lists posts', async () => {
+            const post = await instablock.posts(postCount)
+            assert.equal(post.id.toNumber(), postCount.toNumber(), 'id is correct')
+            assert.equal(post.hash, hash, 'Hash is correct')
+            assert.equal(post.description, 'Post description', 'description is correct')
+            assert.equal(post.tipAmount, '0', 'tip amount is correct')
+            assert.equal(post.author, author, 'author is correct')
         })
     })
 })

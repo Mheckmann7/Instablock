@@ -28,12 +28,39 @@ contract Instablock {
     function uploadPost(string memory _postHash, string memory _description)
         public
     {
+        // make sure hash, desc, and address exist
+        require(bytes(_postHash).length > 0);
+        require(bytes(_description).length > 0);
+        require(msg.sender != address(0x0));
         // increment post id
         postCount++;
         //add post to contract
-        posts[1] = Post(postCount, _postHash, _description, 0, msg.sender);
+        posts[1] = Post(
+            postCount,
+            _postHash,
+            _description,
+            0,
+            payable(msg.sender)
+        );
         // trigger an event
-        emit PostCreated(postCount, _postHash, _description, 0, msg.sender);
+        emit PostCreated(
+            postCount,
+            _postHash,
+            _description,
+            0,
+            payable(msg.sender)
+        );
     }
+
     //Tip posts
+    function tipPostOwner(uint256 _id) public payable {
+        // fetch the post and author
+        Post memory _post = posts[_id];
+        address payable _author = _post.author;
+        // pay the author
+        payable(_author).transfer(msg.value);
+        _post.tipAmount = _post.tipAmount + msg.value;
+        //update the post
+        posts[_id] = _post;
+    }
 }
