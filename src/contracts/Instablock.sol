@@ -43,21 +43,9 @@ contract Instablock {
         // increment post id
         postCount++;
         //add post to contract
-        posts[1] = Post(
-            postCount,
-            _postHash,
-            _description,
-            0,
-            payable(msg.sender)
-        );
+        posts[1] = Post(postCount, _postHash, _description, 0, msg.sender);
         // trigger an event
-        emit PostCreated(
-            postCount,
-            _postHash,
-            _description,
-            0,
-            payable(msg.sender)
-        );
+        emit PostCreated(postCount, _postHash, _description, 0, msg.sender);
     }
 
     //Tip posts
@@ -68,7 +56,7 @@ contract Instablock {
         Post memory _post = posts[_id];
         address payable _author = _post.author;
         // pay the author
-        payable(_author).transfer(msg.value);
+        address(_author).transfer(msg.value);
         _post.tipAmount = _post.tipAmount + msg.value;
         //update the post
         posts[_id] = _post;
