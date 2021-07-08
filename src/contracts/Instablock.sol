@@ -24,6 +24,14 @@ contract Instablock {
         address payable author
     );
 
+    event PostTipped(
+        uint256 id,
+        string hash,
+        string description,
+        uint256 tipAmount,
+        address payable author
+    );
+
     //Create posts
     function uploadPost(string memory _postHash, string memory _description)
         public
@@ -54,6 +62,8 @@ contract Instablock {
 
     //Tip posts
     function tipPostOwner(uint256 _id) public payable {
+        // make sure id is valid
+        require(_id > 0 && _id <= postCount);
         // fetch the post and author
         Post memory _post = posts[_id];
         address payable _author = _post.author;
@@ -62,5 +72,13 @@ contract Instablock {
         _post.tipAmount = _post.tipAmount + msg.value;
         //update the post
         posts[_id] = _post;
+
+        emit PostTipped(
+            _id,
+            _post.hash,
+            _post.description,
+            _post.tipAmount,
+            _author
+        );
     }
 }
