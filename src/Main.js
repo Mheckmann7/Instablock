@@ -3,7 +3,8 @@ import React, { Component} from 'react';
 class Main extends Component {
     render() {
         return (
-            <div style={{border: '5px solid white', padding: '0 40px 50px 40px'}}>
+            <div>
+            <div style={{border: '5px solid white', padding: '0 20rem 50px 20rem', margin: '30px'}}>
                 <h2>Create a Post</h2>
               
                 <form onSubmit={(event) => {
@@ -16,9 +17,21 @@ class Main extends Component {
                     <input id="postDescription" type="text" ref={(input) => { this.postDescription = input }} placeholder="Say something!" required style={{margin: "20px 0", padding: "10px 0"}}/>
                     <button type="submit">Upload</button>
                     </div>
-                    </form>
+                </form>
+          
             
-            </div>
+                </div>
+                {
+                    this.props.posts.map((post, key) => {
+                        return (
+                            <div key={key}>
+                                <img alt={post.description} src={`https://ipfs.infura.io/ipfs/${post.hash}`} width='50%' style={{margin: '20px'}}/>
+                                <p>{post.description}</p>
+                            </div>
+                        )
+                    })
+                }
+                </div>
         )
     }
 

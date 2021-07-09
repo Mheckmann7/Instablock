@@ -4,8 +4,10 @@ import Instablock from './abis/Instablock.json'
 import Main from './Main'
 import './App.css';
 
+// const {create} = require('ipfs-http-client')
+// const ipfs = create({ host: 'localhost', port: '5001', protocol: 'http' })
 const ipfsClient = require('ipfs-http-client')
-const ipfs = ipfsClient({host: 'ipfs.infura.io', port: 5001, protocol: 'https'})
+const ipfs = ipfsClient.create({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' })
 
 class App extends Component {
 
@@ -62,6 +64,12 @@ class App extends Component {
       this.setState({ instablock })
       const postCount = await instablock.methods.postCount().call()
       this.setState({ postCount })
+      for (var i = 1; i <= postCount; i++) {
+        const post = await instablock.methods.posts(i).call()
+        this.setState({
+         posts: [...this.state.posts, post]
+       }) 
+      }
       this.setState({loading: false})
     } else {
       window.alert('Instablock contract not deployed to your network')
@@ -80,20 +88,26 @@ class App extends Component {
     }
   }
 
-  uploadPost = description => {
-    console.log('img to ipfs')
-    ipfs.add(this.state.buffer, (err, result) => {
-      console.log(result)
-      if (err) {
-        console.log(err)
-        return
-      }
-      this.setState({ loading: true })
-      this.state.instablock.methods.uploadPost(result[0].hash, description).send({ from: this.state.account }).on('transactionHash', (hash) => {
-        this.setState({loading: false})
-      })
-    })
-  }
+  uploadPost = async description => {
+		console.log('Submitting file to ipfs...');
+
+        try {
+            const result = await ipfs.add(this.state.buffer);
+            console.log(result);
+
+			this.setState({ loading: true });
+			this.state.instablock.methods
+				.uploadPost(result.path, description)
+				.send({ from: this.state.account })
+				.on('transactionHash', hash => {
+					this.setState({ loading: false });
+				});
+
+        } catch (error) {
+            console.error(error);
+        }
+	}; 
+
 
   constructor(props) {
     super(props)
@@ -112,7 +126,7 @@ class App extends Component {
         <header className="App-header">
         {this.state.loading
           ? <p>Loading...</p>
-            : <Main captureFile={this.captureFile}/>
+            : <Main captureFile={this.captureFile} uploadPost={this.uploadPost} posts={this.state.posts}/>
 
         }
         </header>
