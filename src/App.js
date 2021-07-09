@@ -1,7 +1,11 @@
 import React, { Component} from 'react';
 import Web3 from 'web3';
 import Instablock from './abis/Instablock.json'
+import Main from './Main'
 import './App.css';
+
+const ipfsClient = require('ipfs-http-client')
+const ipfs = ipfsClient({host: 'ipfs.infura.io', port: 5001, protocol: 'https'})
 
 class App extends Component {
 
@@ -30,6 +34,7 @@ class App extends Component {
 
   async componentWillMount() {
     await this.loadWeb3()
+    await this.loadBlockchainData()
   }
   async loadWeb3() {
     if (window.ethereum) {
@@ -44,19 +49,74 @@ class App extends Component {
     }
   }
 
+  async loadBlockchainData() {
+    const web3 = window.web3
+    const accounts = await web3.eth.getAccounts()
+    // fetch first account
+    this.setState({ account: accounts[0] })
+    // network ID 
+    const networkId = await web3.eth.net.getId()
+    const networkData = Instablock.networks[networkId]
+    if (networkData) {
+      const instablock = new web3.eth.Contract(Instablock.abi, networkData.address)
+      this.setState({ instablock })
+      const postCount = await instablock.methods.postCount().call()
+      this.setState({ postCount })
+      this.setState({loading: false})
+    } else {
+      window.alert('Instablock contract not deployed to your network')
+    }
+  }
+
+  captureFile = event => {
+    event.preventDefault()
+    const file = event.target.files[0]
+    const reader = new window.FileReader()
+    reader.readAsArrayBuffer(file)
+
+    reader.onloadend = () => {
+      this.setState({ buffer: Buffer(reader.result) })
+      console.log('buffer', this.state.buffer)
+    }
+  }
+
+  uploadPost = description => {
+    console.log('img to ipfs')
+    ipfs.add(this.state.buffer, (err, result) => {
+      console.log(result)
+      if (err) {
+        console.log(err)
+        return
+      }
+      this.setState({ loading: true })
+      this.state.instablock.methods.uploadPost(result[0].hash, description).send({ from: this.state.account }).on('transactionHash', (hash) => {
+        this.setState({loading: false})
+      })
+    })
+  }
+
   constructor(props) {
     super(props)
     this.state = {
       account: '',
+      instablock: null,
+      posts: [],
+      loading: true,
     }
   }
 
   render() {
     return (
       <div className="App">
+        <p>Account: {this.state.account}</p>
         <header className="App-header">
-          <p>Account: {this.state.account}</p>
+        {this.state.loading
+          ? <p>Loading...</p>
+            : <Main captureFile={this.captureFile}/>
+
+        }
         </header>
+  
       </div>
     );
   }
